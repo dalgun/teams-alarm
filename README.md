@@ -61,10 +61,10 @@ npm install
 
 ## Contributing
 
-Pull requests are welcome. For major changes, please open an issue first
-to discuss what you would like to change.
+master branch : pull request 이후 merge
 
-Please make sure to update tests as appropriate.
+lambda 명으로 branch 생성 후 배포 테스트 진행 (author 기재 필요)
+
 
 ## License
 
