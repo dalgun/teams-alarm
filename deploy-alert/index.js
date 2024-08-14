@@ -2,7 +2,7 @@
 const axios = require('axios'); // axios must be installed via npm i axios
 
 var webhookURL = process.env.WEBHOOK_URL;
-var channelId = process.env.DEV_CHANNEL_ID;
+var channelId = process.env.CHANNEL_ID;
 
 
 exports.handler = async function (event, context) {
@@ -17,13 +17,8 @@ exports.handler = async function (event, context) {
     let emoji = "";
     let heading_color = "";
     let arn = message.resources[0];
-    let env = "";
-    if (pipeline.toString().includes('dev') || pipeline.toString().includes('PPS')) {
-        env = "[DEV] Emart CC"
-    } else {
-        env = "[PRD] Emart CC"
-        channelId = process.env.PRD_CHANNEL_ID;
-    }
+    let env = "TEST";
+
 
     function timestamp(date) {
         var today = new Date(date);
