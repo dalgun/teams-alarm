@@ -40,20 +40,13 @@ npm install
         "name": "$ORG_NAME"
     },
     "image" : "$SNAPSHOT",
-//Webhook 마다 변경 되는 값
-    "webhook_url": "https://shinsegaegroup.webhook.office.com/webhookb2/119c3c64-f95e-4f23-8f55-ea104b99b916@d4ffc887-d88d-41cc-bf6a-6bb47ec0f3ca/IncomingWebhook/a65a3123fbd946a89c0e612a97def23d/53aaa41e-9ad8-4abd-b6d9-bfa20e245721",
+    "webhook_url": "",
     "body": "$EVENT_MSG",
-//webhook 마다 변경 되는 값
     "people": [
         {
-            "mail": "dalgun@emart.com",
+            "mail": "dalgun",
             "name": "권달마",
             "type" : "assignee"
-        },
-        {
-            "mail": "junseok.lee@emart.com",
-            "name": "이준석",
-            "type" : "cc"
         }
     ]
 }
