@@ -1,55 +1,57 @@
 'use strict';
 const axios = require('axios'); // axios must be installed via npm i axios
-
+const { EC2Client, DescribeInstancesCommand } = require("@aws-sdk/client-ec2");
 var webhookURL = process.env.WEBHOOK_URL;
 var channelId = process.env.CHANNEL_ID;
-
+const ec2Client = new EC2Client({ region: 'ap-northeast-2' });
 
 exports.handler = async function (event, context) {
 
     var message = JSON.parse(event.Records[0].Sns.Message);
-
+    let message_type = decisionType(message['detail-type'])
     let state = message.detail.state;
     let pipeline = message.detail.application;
     let create_time = timestamp(message.time);
     let pipeline_id = message.detail.deploymentId;
-    let title = "CodeDeploy Deployment Started";
-    let emoji = "🚀";
-    let heading_color = "Good";
-    let arn = message.resources[0];
-    let env = "[DEV] Emart App";
+    let title = 'CodeDeploy Deployment Started'
+    let emoji = '🚀'
+    let heading_color = 'Good'
+    let env = "TEST";
+    let deployment_group = message.detail.deploymentGroup;
+    let ec2Name = '';
+    console.log(message.detail)
+
+    if (message_type === 'B'){
+        let instance_id = message.detail.instanceId;
+        const params = {
+            InstanceIds: [instance_id]
+        };
+        const data = await ec2Client.send(new DescribeInstancesCommand(params));
+        const instance = data.Reservations[0].Instances[0];
+        const ec2Tag = instance.Tags.find(item => item.Key === "Name");
+        ec2Name = ec2Tag.Value;
+    }
+
+    function decisionType(type) {
+        if (type.includes('Deployment')) {
+            return 'A'
+        } else {
+            return 'B'
+        }
+    }
 
     function timestamp(date) {
         var today = new Date(date);
-        // 미국시간 기준이니까 9를 더해주면 대한민국 시간됨
         today.setHours(today.getHours() + 9);
-        // 문자열로 바꿔주고 T를 빈칸으로 바꿔주면 yyyy-mm-dd hh:mm:ss 이런 형식 나옴
         return today.toISOString().replace("T", " ").substring(0, 19);
     }
 
-    // if (state === 'START') {
-    //     title = 'CodeDeploy Deployment Started'
-    //     emoji = '🚀'
-    //     heading_color = 'Good'
-    // } else if (state === 'SUCCESS') {
-    //     title = 'CodeDeploy Deployment Succeeded'
-    //     emoji = '✅'
-    //     heading_color = 'Good'
-    // } else if (state === 'FAILED' || state === 'CANCELED') {
-    //     title = 'CodeDeploy Deployment Failed(or Canceled)'
-    //     emoji = '❌'
-    //     heading_color = 'Attention'
-    // } else if (state === 'STOPPED' || state === 'STOPPING') {
-    //     title = 'CodeDeploy Deployment Stopped'
-    //     emoji = '⏹️'
-    //     heading_color = 'Attention'
-    // } else {
-    //     console.log('Unknown deployment status:', state)
-    // }
 
     const card = {
+        'messageType': message_type,
+        'instanceId': ec2Name,
         'channel': channelId,
-        'pipelineId' : pipeline_id,
+        'pipelineId': pipeline_id,
         'status': state,
         'contents': {
             '$schema': 'http://adaptivecards.io/schemas/adaptive-card.json',
@@ -79,11 +81,11 @@ exports.handler = async function (event, context) {
                                 "value": pipeline_id
                             },
                             {
-                                "title": "Resources",
-                                "value": arn
+                                "title": "Deployment Group",
+                                "value": deployment_group
                             },
                             {
-                                "title": "PipeLine",
+                                "title": "Application",
                                 "value": pipeline
                             },
                             {
