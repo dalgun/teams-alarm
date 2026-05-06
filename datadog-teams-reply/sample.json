@@ -1,0 +1,21 @@
+{
+  "id": "7656847337440272579",
+  "last_updated": "1720646531000",
+  "event_type": "query_alert_monitor",
+  "title": "[Recovered on {host:scmat-ispweb1}] [신세계포인트] Servlet Request Duration >= 3.0",
+  "date": "1720646531000",
+  "org": {
+    "id": "627263",
+    "name": "Emart SAC"
+  },
+  "image": "https://p.datadoghq.com/snapshot/view/dd-snapshots-prod/org_627263/2024-07-10/01f3762d3c5c79c7510da3fb3ebc34885e12a678.png",
+  "webhook_url": "https://shinsegaegroup.webhook.office.com/webhookb2/119c3c64-f95e-4f23-8f55-ea104b99b916@d4ffc887-d88d-41cc-bf6a-6bb47ec0f3ca/IncomingWebhook/c9989508db594b40bb97dde4feaf611d/53aaa41e-9ad8-4abd-b6d9-bfa20e245721",
+  "body": "\"%%%\\n\"+\"\\n\"+\"\\n\"+\"신세계 포인트 서비스,    서버의 응답시간이 3초 이상 지연 발생이 해소되었습니다. \\n\"+\"\\n\"\n  +\n  \"\\n\"\n  +\n  \" @webhook-alert-teams-emartshinpo-mon-mention\\n\"\n  +\n  \"\\n\"\n  +\n  \"[![Metric Graph](https://p.datadoghq.com/snapshot/view/dd-snapshots-prod/org_627263/2024-07-10/01f3762d3c5c79c7510da3fb3ebc34885e12a678.png)](https://app.datadoghq.com/monitors/135835511?group=host%3Ascmat-ispweb1&from_ts=1720645571000&to_ts=1720646771000&event_id=7656847337440272579&source=monitor_notif)\\n\"\n  +\n  \"\\n\"\n  +\n  \"**trace.servlet.request.duration** over **host:scmat-ispweb1,service:sinpo** was **<= 3.0** on average during the **last 10m**.\\n\"\n  +\n  \"\\n\"\n  +\n  \"The monitor was last triggered at Wed Jul 10 2024 18:30:11 UTC.\\n\"\n  +\n  \"\\n\"\n  +\n  \"- - -\\n\"\n  +\n  \"\\n\"\n  +\n  \"[[Monitor Status](https://app.datadoghq.com/monitors/135835511?group=host%3Ascmat-ispweb1&from_ts=1720645571000&to_ts=1720646771000&event_id=7656847337440272579&source=monitor_notif)] · [[Edit Monitor](https://app.datadoghq.com/monitors/135835511/edit?source=monitor_notif)] · [[View scmat-ispweb1](https://app.datadoghq.com/infrastructure?filter=scmat-ispweb1&source=monitor_notif)] · [[Show Processes](https://app.datadoghq.com/process?from_ts=1720645871000&to_ts=1720646591000&live=false&showSummaryGraphs=true&sort=memory%2CDESC&query=host%3Ascmat-ispweb1&source=monitor_notif)] · [[Related Logs](https://app.datadoghq.com/logs?query=host%3A%22scmat-ispweb1%22+service%3A%22sinpo%22&from_ts=1720645871000&to_ts=1720646471000&live=false&source=monitor_notif)]\\n\"\n  +\n  \"%%%\"",
+  "people": [
+    {
+      "mail": "dalgun@emart.com",
+      "name": "권달마",
+      "type": "assignee"
+    }
+  ]
+}

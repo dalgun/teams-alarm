@@ -1,0 +1,23 @@
+{
+  "name": "atlassian-alert",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "deploy": "./deploy.sh"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "author": "dalgun",
+  "license": "ISC",
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "axios": "^1.16.0",
+    "deepl-node": "^1.27.0"
+  },
+  "devDependencies": {
+    "jest": "^30.3.0"
+  }
+}
