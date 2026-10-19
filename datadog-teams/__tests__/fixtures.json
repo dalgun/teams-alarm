@@ -1,0 +1,209 @@
+{
+  "alertWithPeople": {
+    "payload": {
+      "event_type": "query_alert_monitor",
+      "title": "[P1] [Triggered] [NSAP-PRD-BI][ALB] emart-nsap-prd-mbi-pri-alb ALB의 target response time이 20초 이상 발생",
+      "date": "1791246919000",
+      "event_id": "(sample)",
+      "channel": "(sample)",
+      "image": "https://p.datadoghq.com/snapshot/sample.png",
+      "body": "%%%\nBI 서비스의 emart-nsap-prd-mbi-pri-alb ALB의 Target Response Time이 20초 이상 발생하였습니다.\n - host : internal-emart-nsap-prd-mbi-pri-alb-1236400515.ap-northeast-2.elb.amazonaws.com \n - target group: targetgroup/emart-nsap-prd-mbi-pri-lb-tg8443/70942fd9a6384ea6 \n\n \n@slack-차세대erp-24x7 \n@webhook-Megazone-MARK \n@webhook-alert-teams-emarterp-mon-BILongview-mention\n\n[![Metric Graph](https://p.datadoghq.com/snapshot/sample.png)](https://app.datadoghq.com/monitors/109395859)\n\nThe monitor was last triggered at Tue Oct 06 2026 00:35:19 UTC.\n\n- - -\n\n[[Monitor Status](https://app.datadoghq.com/monitors/109395859)] · [[Edit Monitor](https://app.datadoghq.com/monitors/109395859/edit)] · [[View internal-emart-nsap-prd-mbi-pri-alb-1236400515.ap-northeast-2.elb.amazonaws.com](https://app.datadoghq.com/infrastructure)] · [[Show Processes](https://app.datadoghq.com/process)] · [[Related Logs](https://app.datadoghq.com/logs)]\n%%%"
+    },
+    "people": [
+      {
+        "type": "assignee",
+        "upn": "gildong.hong@emart.com",
+        "displayName": "홍길동"
+      },
+      {
+        "type": "assignee",
+        "upn": "chulsoo.kim@emart.com",
+        "displayName": "김철수"
+      },
+      {
+        "type": "assignee",
+        "upn": "younghee.lee@emart.com",
+        "displayName": "이영희"
+      },
+      {
+        "type": "assignee",
+        "upn": "minsu.park@emart.com",
+        "displayName": "박민수"
+      }
+    ]
+  },
+  "recoveredWithPeople": {
+    "payload": {
+      "event_type": "query_alert_monitor",
+      "title": "[P1] [Recovered] [NSAP-PRD-BI][ALB] emart-nsap-prd-mbi-pri-alb ALB의 target response time이 20초 이상 발생",
+      "date": "1791247939000",
+      "event_id": "(sample)",
+      "channel": "(sample)",
+      "image": "https://p.datadoghq.com/snapshot/sample.png",
+      "body": "%%%\n\n\nBI 서비스의 emart-nsap-prd-mbi-pri-alb ALB의 Target Response Time이 20초 이하로 복구되었습니다.\n - host : internal-emart-nsap-prd-mbi-pri-alb-1236400515.ap-northeast-2.elb.amazonaws.com \n - target group: targetgroup/emart-nsap-prd-mbi-pri-lb-tg8443/70942fd9a6384ea6 \n\n \n@slack-차세대erp-24x7 \n@webhook-Megazone-MARK \n@webhook-alert-teams-emarterp-mon-BILongview-mention\n\n[![Metric Graph](https://p.datadoghq.com/snapshot/sample.png)](https://app.datadoghq.com/monitors/109395859)\n\nThe monitor was last triggered at Tue Oct 06 2026 00:35:19 UTC.\n\n- - -\n\n[[Monitor Status](https://app.datadoghq.com/monitors/109395859)] · [[Edit Monitor](https://app.datadoghq.com/monitors/109395859/edit)] · [[View internal-emart-nsap-prd-mbi-pri-alb-1236400515.ap-northeast-2.elb.amazonaws.com](https://app.datadoghq.com/infrastructure)] · [[Show Processes](https://app.datadoghq.com/process)] · [[Related Logs](https://app.datadoghq.com/logs)]\n%%%"
+    },
+    "people": [
+      {
+        "type": "assignee",
+        "upn": "gildong.hong@emart.com",
+        "displayName": "홍길동"
+      },
+      {
+        "type": "assignee",
+        "upn": "chulsoo.kim@emart.com",
+        "displayName": "김철수"
+      },
+      {
+        "type": "assignee",
+        "upn": "younghee.lee@emart.com",
+        "displayName": "이영희"
+      },
+      {
+        "type": "assignee",
+        "upn": "minsu.park@emart.com",
+        "displayName": "박민수"
+      }
+    ]
+  },
+  "crashLoopWithCode": {
+    "payload": {
+      "event_type": "query_alert_monitor",
+      "title": "[Triggered on {kube_namespace:excel-addin,pod_name:excel-addin-backend-5f5f77666-slxzw}] [P1] CrashLoopBackOff 발생 — excel-addin",
+      "date": "1791851211000",
+      "event_id": "(sample)",
+      "channel": "(sample)",
+      "image": "https://p.datadoghq.com/snapshot/sample.png",
+      "body": "%%%\n🚨 **CrashLoopBackOff 감지**\n\n- **네임스페이스**: excel-addin\n- **Pod**: excel-addin-backend-5f5f77666-slxzw\n\nPod가 반복적으로 크래시하고 있습니다. 즉시 확인이 필요합니다.\n\n```\nkubectl logs -n excel-addin excel-addin-backend-5f5f77666-slxzw --previous\nkubectl describe pod -n excel-addin excel-addin-backend-5f5f77666-slxzw\n```\n\n\n\n\n@webhook-alert-teams-emartai-mon-pwcc-mention\n\n\n\n\n\n\n\n[![Metric Graph](https://p.datadoghq.com/snapshot/sample.png)](https://app.datadoghq.com/monitors/274180611)\n\n`max(last_5m):default_zero(sum:kubernetes_state.container.status_report.count.waiting{reason:crashloopbackoff,kube_cluster_name:emart-prd-ai-eksc} by {kube_namespace,pod_name}) > 0`\n\nThe monitor was last triggered at Tue Oct 13 2026 00:26:51 UTC.\n\n- - -\n\n[[Monitor Status](https://app.datadoghq.com/monitors/274180611)] · [[Edit Monitor](https://app.datadoghq.com/monitors/274180611/edit)] · [[Related Logs](https://app.datadoghq.com/logs)]\n%%%"
+    },
+    "people": [
+      {
+        "type": "assignee",
+        "upn": "gildong.hong@emart.com",
+        "displayName": "홍길동"
+      },
+      {
+        "type": "cc",
+        "upn": "chulsoo.kim@emart.com",
+        "displayName": "김철수"
+      }
+    ]
+  },
+  "warnWithScope": {
+    "payload": {
+      "event_type": "query_alert_monitor",
+      "title": "[Warn on {service:common-agent-backend,service:placeholder}] [P1] APM 에러율 급증 — common-agent-backend,placeholder",
+      "date": "1791185389000",
+      "event_id": "(sample)",
+      "channel": "(sample)",
+      "image": "https://p.datadoghq.com/snapshot/sample.png",
+      "body": "%%%\n\n\n⚠️ APM 에러율 경고 — common-agent-backend,placeholder (2.878%)\n\n\n\n\n@webhook-alert-teams-emartai-mon-pwca-mention\n\n\n\n\n\n\n\n\n\n\n\n\n[![Metric Graph](https://p.datadoghq.com/snapshot/sample.png)](https://app.datadoghq.com/monitors/274180609)\n\n`sum(last_5m):( default_zero(sum:trace.fastapi.request.errors{env:prd-ai,!service:litellm} by {service}.as_count()) + default_zero(sum:trace.next.request.errors{env:prd-ai,!service:litellm} by {service}.as_count()) ) / ( default_zero(sum:trace.fastapi.request.hits{env:prd-ai,!service:litellm} by {service}.as_count()) + default_zero(sum:trace.next.request.hits{env:prd-ai,!service:litellm} by {service}.as_count()) ) * 100 > 5`\n\nThe monitor was last triggered at Mon Oct 05 2026 07:29:49 UTC.\n\n- - -\n\n[[Monitor Status](https://app.datadoghq.com/monitors/274180609)] · [[Edit Monitor](https://app.datadoghq.com/monitors/274180609/edit)] · [[Related Logs](https://app.datadoghq.com/logs)]\n%%%"
+    },
+    "people": [
+      {
+        "type": "assignee",
+        "upn": "gildong.hong@emart.com",
+        "displayName": "홍길동"
+      },
+      {
+        "type": "assignee",
+        "upn": "chulsoo.kim@emart.com",
+        "displayName": "김철수"
+      },
+      {
+        "type": "cc",
+        "upn": "younghee.lee@emart.com",
+        "displayName": "이영희"
+      },
+      {
+        "type": "cc",
+        "upn": "minsu.park@emart.com",
+        "displayName": "박민수"
+      }
+    ]
+  },
+  "syntheticsReTriggered": {
+    "payload": {
+      "event_type": "synthetics_alert",
+      "title": "[P1] [Re-Triggered] [APP-PROD] https://store.emart.com/main/main.do  URL URL Check Failed",
+      "date": "1791906362000",
+      "event_id": "(sample)",
+      "channel": "(sample)",
+      "image": "null",
+      "body": "%%%\nAWS 환경의 https://store.emart.com/main/main.do page health check 에러가 발생했습니다.\n이 후 Recoverd 메세지가 보이지 않는다면 시스템을 살펴 보시기 바랍니다.\n \n\n \n\n@slack-EMSEMART-emart-24x7 \n@webhook-Megazone-MARK\n@webhook-alert-teams-emartapp-mon-mention\n\nThe monitor was last triggered at Tue Oct 13 2026 15:36:02 UTC.\n\n- - -\n\n[[Test Status](https://app.datadoghq.com/synthetics/details/j7u-bdv-vvy)] · [[Edit Test](https://app.datadoghq.com/synthetics/edit/j7u-bdv-vvy)] · [[Related Logs](https://app.datadoghq.com/logs)]\n%%%"
+    },
+    "people": [
+      {
+        "type": "assignee",
+        "upn": "gildong.hong@emart.com",
+        "displayName": "홍길동"
+      },
+      {
+        "type": "assignee",
+        "upn": "chulsoo.kim@emart.com",
+        "displayName": "김철수"
+      },
+      {
+        "type": "assignee",
+        "upn": "younghee.lee@emart.com",
+        "displayName": "이영희"
+      },
+      {
+        "type": "assignee",
+        "upn": "minsu.park@emart.com",
+        "displayName": "박민수"
+      },
+      {
+        "type": "assignee",
+        "upn": "jiwoo.choi@emart.com",
+        "displayName": "최지우"
+      },
+      {
+        "type": "assignee",
+        "upn": "seoyeon.jung@emart.com",
+        "displayName": "정서연"
+      }
+    ]
+  },
+  "eventV2Failover": {
+    "payload": {
+      "event_type": "event_v2_alert",
+      "title": "[Triggered on {message:Multi AZ instance failover started,name:wdp-uni-em-hc-rds-svc}] [U4P-PROD] RDS Failover",
+      "date": "1791258118000",
+      "event_id": "(sample)",
+      "channel": "(sample)",
+      "image": "null",
+      "body": "%%%\nAWS 환경의 RDS wdp-uni-em-hc-rds-svc에 Failover가 발생하였습니다.\r\nMulti AZ instance failover started\n@webhook-alert-teams-emarthcuniverse-mon-warn-mention\n\n[1 event triggered this monitor](https://app.datadoghq.com/event/explorer), here is the last one.\n\n- - -\n\n#### [RDS: A(n) failover event has been triggered on your db-instance: wdp-uni-em-hc-rds-svc](https://app.datadoghq.com/event/event)\n\n%%%\nMulti-AZ instance failover started. \n%%%\n\n- - -\n\nThe **count** of events matching **[source:amazon_rds message:*failover* env:hcuniverse-prd](https://app.datadoghq.com/event/explorer)**, grouped by **name,message**, was **> 0.0** during the **last 5m**.\n\nThe monitor was last triggered at Tue Oct 06 2026 03:40:27 UTC.\n\n- - -\n\n[[Monitor Status](https://app.datadoghq.com/monitors/326908887)] · [[Edit Monitor](https://app.datadoghq.com/monitors/326908887/edit)] · [[Related Logs](https://app.datadoghq.com/logs)]\n%%%"
+    },
+    "people": []
+  },
+  "logAlert": {
+    "payload": {
+      "event_type": "log_alert",
+      "title": "[Triggered on {service:prd-ai-db}] [P3] ERROR 로그 급증 — prd-ai-db",
+      "date": "1791366978000",
+      "event_id": "(sample)",
+      "channel": "(sample)",
+      "image": "null",
+      "body": "%%%\n📋 **ERROR 로그 급증**\n\n- **서비스**: prd-ai-db\n- **5분간 에러 로그**: 92.0건\n\nDatadog Log Explorer에서 에러 내용을 확인하세요.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n@webhook-alert-teams-emartai-mon-sac-mention\n\nMore than **50** log events matched in the last **5m** against the monitored query: **[`env:prd-ai status:error !service:litellm`](https://app.datadoghq.com/logs/analytics)** by **service**\n\nThe monitor was last triggered at Wed Oct 07 2026 09:56:18 UTC.\n\n- - -\n\n[[Monitor Status](https://app.datadoghq.com/monitors/274180638)] · [[Edit Monitor](https://app.datadoghq.com/monitors/274180638/edit)] · [[Related Logs](https://app.datadoghq.com/logs/analytics)]\n%%%"
+    },
+    "people": [
+      {
+        "type": "assignee",
+        "upn": "gildong.hong@emart.com",
+        "displayName": "홍길동"
+      }
+    ]
+  },
+  "recoveredNoPeople": {
+    "payload": {
+      "event_type": "query_alert_monitor",
+      "title": "[Recovered] [AWS][SPOINT-PROD] ssgpnt-spcom-api 에서 응답시간 5초 이상 발생",
+      "date": "1791209095000",
+      "event_id": "(sample)",
+      "channel": "(sample)",
+      "image": "https://p.datadoghq.com/snapshot/sample.png",
+      "body": "%%%\n\n \n [AWS] ssgpnt-spcom-api의 post_/mylounge/v1/electjournalpop에서 Latency가 정상 수치로 복구되었습니다.\n\n  - 현재 값: 2.35초\n\n\n@webhook-alert-teams-emartspoint-mon-warn-mention\n\n[![Metric Graph](https://p.datadoghq.com/snapshot/sample.png)](https://app.datadoghq.com/monitors/297256855)\n\nThe monitor was last triggered at Mon Oct 05 2026 13:58:55 UTC.\n\n- - -\n\n[[Monitor Status](https://app.datadoghq.com/monitors/297256855)] · [[Edit Monitor](https://app.datadoghq.com/monitors/297256855/edit)] · [[Related Logs](https://app.datadoghq.com/logs)]\n%%%"
+    },
+    "people": []
+  }
+}
