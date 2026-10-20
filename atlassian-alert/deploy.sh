@@ -83,7 +83,7 @@ aws lambda update-function-code \
   --zip-file "fileb://$ZIP_FILE" \
   --region "$AWS_REGION" \
   --profile "$AWS_PROFILE" \
-  --output json | jq '.' || {
+  --query '{FunctionName: FunctionName, LastModified: LastModified, CodeSha256: CodeSha256}' --output json || {
     echo -e "${RED}Error: Lambda function update failed${NC}"
     exit 1
   }
@@ -104,7 +104,7 @@ aws lambda update-function-configuration \
   --runtime nodejs22.x \
   --region "$AWS_REGION" \
   --profile "$AWS_PROFILE" \
-  --output json | jq '.' || {
+  --query '{FunctionName: FunctionName, LastModified: LastModified, CodeSha256: CodeSha256}' --output json || {
     echo -e "${RED}Error: Runtime update failed${NC}"
     exit 1
   }

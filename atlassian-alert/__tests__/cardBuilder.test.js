@@ -109,6 +109,11 @@ test('멘션: 첫 글에 담당자/참조자 FactSet 과 entity 를 넣는다', 
         { type: 'mention', text: '<at>이수빈</at>', mentioned: { id: 'b@x.com', name: '이수빈' } },
         { type: 'mention', text: '<at>김민애</at>', mentioned: { id: 'c@x.com', name: '김민애' } },
     ]);
+    expect(first.mentions).toEqual([
+        { type: 'assignee', upn: 'a@x.com', name: '이현진' },
+        { type: 'assignee', upn: 'b@x.com', name: '이수빈' },
+        { type: 'cc', upn: 'c@x.com', name: '김민애' },
+    ]);
 });
 
 test('selectMentionPeople: 평일 09~18시(KST)는 담당자만, 그 외·주말은 참조자까지', () => {
@@ -130,6 +135,7 @@ test('멘션: 회신이나 대상이 없으면 넣지 않는다', () => {
 
     [reply, none].forEach((card) => {
         expect(card.contents.msteams.entities).toEqual([]);
+        expect(card.mentions).toEqual([]);
         expect(card.contents.body.some((e) => e.type === 'FactSet')).toBe(false);
     });
 });

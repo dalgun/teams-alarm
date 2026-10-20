@@ -131,6 +131,8 @@
         return {
             element: { type: 'FactSet', separator: true, spacing: 'Medium', facts },
             entities: valid.map((p) => ({ type: 'mention', text: `<at>${p.name}</at>`, mentioned: { id: p.upn, name: p.name } })),
+            // 카드 안 멘션은 알림이 가지 않아, 흐름이 이 목록으로 멘션 회신을 따로 단다
+            targets: valid.map((p) => ({ type: p.type === 'cc' ? 'cc' : 'assignee', upn: p.upn, name: p.name })),
         };
     };
 
@@ -169,7 +171,7 @@
      * @param {object} incident  Statuspage webhook 의 incident
      * @param {{ name?: string, body?: string }} translated  incident.name / 최신 update body 의 번역문 (없으면 원문)
      * @param {{ people?: Array<{ type: string, upn: string, name: string }> }} [options]  첫 글에 멘션할 담당자/참조자
-     * @returns {{ uniqueId: string, msgType: string, contents: object } | null}
+     * @returns {{ uniqueId: string, msgType: string, mentions: Array<{ type: string, upn: string, name: string }>, contents: object } | null}
      */
     const buildIncidentCard = (incident, translated, options) => {
         const updates = sortUpdates(incident?.incident_updates);
@@ -198,6 +200,7 @@
         return {
             uniqueId: incident.id || '',
             msgType: isReply ? MSG_TYPE_REPLY : MSG_TYPE_FIRST,
+            mentions: mention ? mention.targets : [],
             contents: {
                 $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
                 type: 'AdaptiveCard',

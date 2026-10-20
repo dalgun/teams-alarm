@@ -46,6 +46,7 @@ test('첫 글은 Graph 로 조회한 이름으로 멘션한다', async () => {
 
     expect(mockResolve).toHaveBeenCalledTimes(1);
     expect(axios.post.mock.calls[0][1].contents.msteams.entities[0]).toMatchObject({ text: '<at>이름:a@x.com</at>', mentioned: { id: 'a@x.com' } });
+    expect(axios.post.mock.calls[0][1].mentions).toEqual([{ type: 'assignee', upn: 'a@x.com', name: '이름:a@x.com' }]);
 });
 
 test('회신은 Graph 를 조회하지 않고 멘션도 없다', async () => {

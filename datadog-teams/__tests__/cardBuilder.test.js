@@ -117,9 +117,26 @@ test('buildCard: image 가 null 이거나 https 가 아니면 Image 를 넣지 �
     });
 });
 
-test('buildCard: Power Automate 로 넘기는 형식(channel/eventId/msgType/contents)을 유지한다', () => {
+test('buildCard: 발생 알람은 흐름이 멘션 회신에 쓸 mentions 목록을 함께 보낸다', () => {
+    const card = buildCard(fixtures.alertWithPeople.payload, [
+        { type: 'assignee', upn: 'a@emart.com', displayName: '가나다' },
+        { type: 'cc', upn: 'b@emart.com' },
+    ]);
+    assert.deepEqual(card.mentions, [
+        { type: 'assignee', upn: 'a@emart.com', name: '가나다' },
+        { type: 'cc', upn: 'b@emart.com', name: 'b@emart.com' },
+    ]);
+});
+
+test('buildCard: 복구 알람이나 담당자가 없으면 mentions 는 빈 목록', () => {
+    const { payload, people } = fixtures.recoveredWithPeople;
+    assert.deepEqual(buildCard(payload, people).mentions, []);
+    assert.deepEqual(buildCard(fixtures.alertWithPeople.payload, []).mentions, []);
+});
+
+test('buildCard: Power Automate 로 넘기는 형식(channel/eventId/msgType/mentions/contents)을 유지한다', () => {
     const card = buildCard({ title: '[Triggered] x', body: '', channel: 'ch', event_id: 'e1' }, []);
-    assert.deepEqual(Object.keys(card), ['channel', 'eventId', 'msgType', 'contents']);
+    assert.deepEqual(Object.keys(card), ['channel', 'eventId', 'msgType', 'mentions', 'contents']);
     assert.equal(card.channel, 'ch');
     assert.equal(card.eventId, 'e1');
     assert.equal(card.contents.type, 'AdaptiveCard');

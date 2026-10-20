@@ -212,7 +212,10 @@
         mentioned: { id: p.upn, name: mentionLabel(p) },
     }));
 
-    const isUsableImage = (url) => typeof url === 'string' && /^https:\/\//.test(url);
+    // 카드 안 멘션은 알림이 가지 않아, 흐름이 이 목록으로 멘션 회신을 따로 단다
+    const mentionTargets = (people) => people.map((p) => ({ type: p.type === 'cc' ? 'cc' : 'assignee', upn: p.upn, name: mentionLabel(p) }));
+
+    const isUsableImage =(url) => typeof url === 'string' && /^https:\/\//.test(url);
 
     const detailsContainer = (body) => {
         if (!body.details.length && !body.query.length) return [];
@@ -262,6 +265,7 @@
             channel: payload.channel || '',
             eventId: payload.event_id || '',
             msgType: parsed.isRecovered ? 'B' : 'A',
+            mentions: showAlertExtras ? mentionTargets(people) : [],
             contents: {
                 $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
                 type: 'AdaptiveCard',
