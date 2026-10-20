@@ -1,269 +1,108 @@
 'use strict';
 const axios = require('axios');
 const deepl = require('deepl-node');
-const Ajv = require('ajv');
-const ajv = new Ajv();
+const { DynamoDBClient, PutItemCommand, DeleteItemCommand } = require('@aws-sdk/client-dynamodb');
+const { buildIncidentCard, latestUpdate, selectMentionPeople } = require('./cardBuilder');
+const { resolveDisplayNames } = require('./graph');
+
 const webhookURL = process.env.WEBHOOK_URL;
 const channelId = process.env.CHANNEL_ID;
-const authKey = process.env.DEEPL_AUTH_KEY;
-const translator = new deepl.Translator(authKey, { serverUrl: 'https://api-free.deepl.com' });
+const dedupTable = process.env.DEDUP_TABLE;
+// 첫 글에 멘션할 사람: MENTION_PEOPLE='[{"type":"assignee","upn":"a@x.com"}, {"type":"cc","upn":"b@x.com"}]'
+// 표시 이름은 보낼 때 Graph 로 조회
+const parseMentionPeople = (raw) => {
+    if (!raw) return [];
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (err) {
+        console.error('MENTION_PEOPLE 형식 오류, 멘션 없이 전송:', err.message);
+        return [];
+    }
+};
+const mentionPeople = parseMentionPeople(process.env.MENTION_PEOPLE);
+const translator = new deepl.Translator(process.env.DEEPL_AUTH_KEY, { serverUrl: 'https://api-free.deepl.com' });
+const dynamo = new DynamoDBClient({});
 
-const componentSchema = {
-    "type": "object",
-    "properties": {
-        "meta": {
-            "type": "object",
-            "properties": {
-                "unsubscribe": { "type": "string" },
-                "documentation": { "type": "string" }
-            },
-            "required": ["unsubscribe", "documentation"]
-        },
-        "page": {
-            "type": "object",
-            "properties": {
-                "id": { "type": "string" },
-                "status_indicator": { "type": "string" },
-                "status_description": { "type": "string" }
-            },
-            "required": ["id", "status_indicator", "status_description"]
-        },
-        "component_update": {
-            "type": "object",
-            "properties": {
-                "created_at": { "type": "string" },
-                "new_status": { "type": "string" },
-                "old_status": { "type": "string" },
-                "id": { "type": "string" },
-                "component_id": { "type": "string" }
-            },
-            "required": ["created_at", "new_status", "old_status", "id", "component_id"]
-        },
-        "component": {
-            "type": "object",
-            "properties": {
-                "created_at": { "type": "string" },
-                "id": { "type": "string" },
-                "name": { "type": "string" },
-                "status": { "type": "string" }
-            },
-            "required": ["created_at", "id", "name", "status"]
-        }
-    },
-    "required": ["meta", "page", "component_update", "component"]
+const DEDUP_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+// DeepL 실패 시 원문 그대로 사용
+const translateTexts = async (texts) => {
+    try {
+        const result = await translator.translateText(texts, null, 'ko');
+        return result.map((r) => r.text);
+    } catch (err) {
+        console.error('Translation error:', err.message);
+        return texts;
+    }
 };
 
-exports.handler = async function (event) {
+// 같은 incident update 는 한 번만 보낸다. 조건부 쓰기에 성공한 호출만 true
+// DynamoDB 자체 오류는 알람 누락보다 중복이 낫다고 보고 true(전송) 처리
+const claimUpdate = async (update, incidentId) => {
+    if (!dedupTable) return true;
+    try {
+        await dynamo.send(new PutItemCommand({
+            TableName: dedupTable,
+            Item: {
+                updateId: { S: update.id },
+                incidentId: { S: incidentId || '' },
+                expiresAt: { N: String(Math.floor(Date.now() / 1000) + DEDUP_TTL_SECONDS) },
+            },
+            ConditionExpression: 'attribute_not_exists(updateId)',
+        }));
+        return true;
+    } catch (err) {
+        if (err.name === 'ConditionalCheckFailedException') return false;
+        console.error('Dedup check error, sending anyway:', err.message);
+        return true;
+    }
+};
+
+// 전송 실패 시 기록을 지워서 Statuspage 재시도 때 다시 보낼 수 있게 한다
+const releaseUpdate = async (update) => {
+    if (!dedupTable) return;
+    try {
+        await dynamo.send(new DeleteItemCommand({ TableName: dedupTable, Key: { updateId: { S: update.id } } }));
+    } catch (err) {
+        console.error('Dedup release error:', err.message);
+    }
+};
+
+const handleIncident = async (incident) => {
+    const update = latestUpdate(incident);
+    if (!update?.id) return 'incident update 없음 → 발송 X';
+    console.log(JSON.stringify({ incidentId: incident.id, updateId: update.id, status: update.status, updates: incident.incident_updates.length }));
+
+    if (!(await claimUpdate(update, incident.id))) return `이미 보낸 업데이트(${update.id}) → 발송 X`;
+
+    const [name, body] = await translateTexts([incident.name || '', update.body || '']);
+    // 회신에는 멘션하지 않으므로 첫 글일 때만 Graph 조회
+    const isFirstPost = incident.incident_updates.length === 1;
+    const people = isFirstPost ? await resolveDisplayNames(selectMentionPeople(mentionPeople, new Date())) : [];
+    const card = buildIncidentCard(incident, { name, body }, { people });
+    try {
+        const response = await axios.post(webhookURL, { channel: channelId, ...card }, { headers: { 'content-type': 'application/json' } });
+        return `${response.status} - ${response.statusText}`;
+    } catch (err) {
+        console.error('Webhook error:', err.message);
+        await releaseUpdate(update);
+        throw err;
+    }
+};
+
+exports.handler = async (event) => {
     let message;
     try {
         message = JSON.parse(event.body);
     } catch (e) {
-        console.error("Invalid JSON body:", e);
-        return { statusCode: 400, body: "Invalid JSON" };
+        console.error('Invalid JSON body:', e.message);
+        return { statusCode: 400, body: 'Invalid JSON' };
     }
 
-    let msgType = "";
-    let uniqueId = "";
+    // 구성 요소 상태 변경 알림은 채널로 보내지 않음 (번역 전에 종료)
+    if (message?.component_update) return '컴포넌트 구성 요소 알람으로 분류되어 팀즈 메세지 발송 X';
+    if (!Array.isArray(message?.incident?.incident_updates)) return 'incident 알림 아님 → 발송 X';
 
-    const msg = {
-        "channel": channelId,
-        "uniqueId": uniqueId,
-        "msgType": msgType,
-        "contents": {
-            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-            "version": "1.0",
-            "type": "AdaptiveCard",
-            "body": [],
-            "msteams": { "width": "full", "entities": [] }
-        }
-    };
-
-    const setColor = (status) => {
-        const statusMap = {
-            "major outage": "Attention",
-            "operational": "Good"
-        };
-        return statusMap[status.toLowerCase()] || "Warning";
-    };
-
-    const timestamp = (date) => {
-        return new Date(date).toLocaleString('ko-KR', {
-            timeZone: 'Asia/Seoul',
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', second: '2-digit',
-            hour12: false
-        });
-    };
-
-    const translateTexts = async (texts) => {
-        try {
-            const result = await translator.translateText(texts, null, "ko");
-            console.log("Translation result:", result); // 번역 결과 출력
-            return result.map(r => r.text);
-        } catch (err) {
-            console.error("Translation error:", err);
-            return texts; // Fallback to original texts in case of failure
-        }
-    };
-
-    try {
-        const isValidComponent = ajv.validate(componentSchema, message);
-
-        if (isValidComponent) {
-            // Component 상태 변경에 따른 알람
-            msg.msgType = "A";
-            msg.uniqueId = message.component.id;
-            const [newStatus, oldStatus, desc] = await translateTexts([
-                message.component_update.new_status.replaceAll('_', ' '),
-                message.component_update.old_status.replaceAll('_', ' '),
-                message.page.status_description
-            ]);
-
-            msg.contents.body = [
-                {
-                    "type": "Container",
-                    "items": [
-                        {
-                            "type": "TextBlock",
-                            "text": "🗣️ 지라/위키 구성 요소 상태 변경 안내",
-                            "weight": "Bolder",
-                            "size": "Large",
-                            "color": setColor(newStatus)
-                        },
-                        {
-                            "type": "FactSet",
-                            "facts": [
-                                { "title": "구성 요소:", "value": message.component.name },
-                                { "title": "이전 상태:", "value": oldStatus },
-                                { "title": "현재 상태:", "value": newStatus },
-                                { "title": "변경 일시:", "value": timestamp(message.component_update.created_at) },
-                                { "title": "설명:", "value": desc }
-                            ]
-                        },
-                        {
-                            "type": "ActionSet",
-                            "actions": [{ "type": "Action.OpenUrl", "title": "상세 정보 보기", "url": "https://jira-software.status.atlassian.com", "style": "positive" }]
-                        }
-                    ]
-                }
-            ];
-        } else if (message.incident) {
-            if (message.incident.incident_updates.length === 1) {
-                // 단일 Incident 알람
-                msg.msgType = "B";
-                msg.uniqueId = message.incident.id;
-                const [incidentName, incidentBody, incidentStatus] = await translateTexts([
-                    message.incident.name,
-                    message.incident.incident_updates[0].body,
-                    message.incident.incident_updates[0].status
-                ]);
-
-                msg.contents.body = [
-                    {
-                        "type": "TextBlock",
-                        "text": "❗지라/위키 장애 알람",
-                        "weight": "Bolder",
-                        "size": "Large"
-                    },
-                    {
-                        "type": "FactSet",
-                        "facts": [
-                            { "title": "장애 등급", "value": message.incident.impact },
-                            { "title": "상태", "value": incidentStatus },
-                            { "title": "발생 일시", "value": timestamp(message.incident.created_at) },
-                            { "title": "내용", "value": incidentName },
-                            { "title": "상세", "value": incidentBody }
-                        ]
-                    },
-                    {
-                        "type": "ActionSet",
-                        "actions": [{ "type": "Action.OpenUrl", "title": "장애 상세 페이지 확인", "url": message.incident.shortlink, "style": "destructive" }]
-                    }
-                ];
-            } else {
-                // 다중 Incident 알람
-                msg.msgType = "C";
-                msg.uniqueId = message.incident.id;
-                const updates = message.incident.incident_updates;
-
-                const translatedUpdates = await Promise.all(updates.map(async (update) => {
-                    const [incidentStatus, incidentBody] = await translateTexts([update.status, update.body]);
-                    return {
-                        status: incidentStatus,
-                        body: incidentBody,
-                        createdAt: timestamp(update.created_at)
-                    };
-                }));
-
-                msg.contents.body = translatedUpdates.map((update, index) => ({
-                    "type": "ColumnSet",
-                    "columns": [
-                        {
-                            "type": "Column",
-                            "width": "40px",
-                            "backgroundImage": {
-                                "url": index === 0 ? "https://svgur.com/i/19ue.svg" : "https://i.postimg.cc/TYs2b8qG/timeline.png",
-                                "horizontalAlignment": "Center",
-                                "fillMode": "RepeatVertically"
-                            },
-                            "horizontalAlignment": "Right"
-                        },
-                        {
-                            "type": "Column",
-                            "width": "stretch",
-                            "items": [
-                                {
-                                    "type": "Container",
-                                    "spacing": "None",
-                                    "minHeight": "4px",
-                                    "items": [
-                                        {
-                                            "type": "TextBlock",
-                                            "text": update.status,
-                                            "wrap": true,
-                                            "size": "Large",
-                                            "weight": "Bolder",
-                                            "spacing": "Medium"
-                                        },
-                                        {
-                                            "type": "TextBlock",
-                                            "text": update.createdAt,
-                                            "wrap": true,
-                                            "weight": "Bolder",
-                                            "color": "Accent"
-                                        },
-                                        {
-                                            "type": "TextBlock",
-                                            "text": update.body,
-                                            "wrap": true,
-                                            "size": "Small",
-                                            "isSubtle": true
-                                        }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Column",
-                            "width": "16px"
-                        }
-                    ]
-                }));
-            }
-        }
-    }  catch (error) {
-        console.error("Validation or processing error:", error);
-    }
-
-    if (msg.msgType === 'A') {
-        return "컴포넌트 구성 요소 알람으로 분류되어 팀즈 메세지 발송 X";
-    }
-
-    try {
-        const response = await axios.post(webhookURL, msg, { headers: { 'content-type': 'application/json' } });
-        return `${response.status} - ${response.statusText}`;
-    } catch (err) {
-        console.error("Webhook error:", err);
-        return err;
-    }
+    return handleIncident(message.incident);
 };

@@ -46,7 +46,7 @@ mkdir -p "$TEMP_DIR"
 
 # 2️⃣ 필요한 파일 복사
 echo -e "${YELLOW}[2/4] Copying application files...${NC}"
-cp index.js "$TEMP_DIR/"
+cp index.js cardBuilder.js graph.js "$TEMP_DIR/"
 cp package.json "$TEMP_DIR/"
 cp package-lock.json "$TEMP_DIR/" 2>/dev/null || true
 

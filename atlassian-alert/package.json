@@ -13,11 +13,16 @@
   "author": "dalgun",
   "license": "ISC",
   "dependencies": {
-    "ajv": "^8.20.0",
     "axios": "^1.16.0",
     "deepl-node": "^1.27.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1152.0",
     "jest": "^30.3.0"
+  },
+  "jest": {
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ]
   }
 }
