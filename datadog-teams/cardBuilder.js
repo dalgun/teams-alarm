@@ -215,7 +215,34 @@
     // 카드 안 멘션은 알림이 가지 않아, 흐름이 이 목록으로 멘션 회신을 따로 단다
     const mentionTargets = (people) => people.map((p) => ({ type: p.type === 'cc' ? 'cc' : 'assignee', upn: p.upn, name: mentionLabel(p) }));
 
-    const isUsableImage =(url) => typeof url === 'string' && /^https:\/\//.test(url);
+    // Graph 로 올릴 글: 카드 첨부 + 그 아래 멘션 줄(알림 발생) + 카드 첨부. 카드 안 멘션은 알림이 가지 않는다
+    const GRAPH_CARD_ID = 'alertcard';
+    const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Teams 는 멘션 문구에 & 가 있으면 뒤에 `/at>` 를 남기므로 전각 ＆ 로 바꾼다
+    const graphMentionText = (person) => mentionLabel(person).replace(/&/g, '＆');
+
+    const buildGraphMessage = (card, people) => {
+        const mentionable = people.filter((p) => p.id);
+        const groups = [
+            ['담당자', mentionable.filter((p) => p.type !== 'cc')],
+            ['참조자', mentionable.filter((p) => p.type === 'cc')],
+        ].filter(([, list]) => list.length);
+        const ordered = groups.flatMap(([, list]) => list);
+        const line = groups
+            .map(([label, list]) => `${label}: ${list.map((p) => `<at id="${ordered.indexOf(p)}">${escapeHtml(graphMentionText(p))}</at>`).join(', ')}`)
+            .join(' / ');
+        return {
+            body: { contentType: 'html', content: `<attachment id="${GRAPH_CARD_ID}"></attachment>${line ? `<p>${line}</p>` : ''}` },
+            attachments: [{ id: GRAPH_CARD_ID, contentType: 'application/vnd.microsoft.card.adaptive', content: JSON.stringify(card) }],
+            mentions: ordered.map((p, i) => ({
+                id: i,
+                mentionText: graphMentionText(p),
+                mentioned: { user: { id: p.id, displayName: mentionLabel(p), userIdentityType: 'aadUser' } },
+            })),
+        };
+    };
+
+    const isUsableImage = (url) => typeof url === 'string' && /^https:\/\//.test(url);
 
     const detailsContainer = (body) => {
         if (!body.details.length && !body.query.length) return [];
@@ -232,7 +259,16 @@
         }];
     };
 
-    // resolvedPeople: [{ type: 'assignee' | 'cc', displayName, upn }] (Graph 조회로 확인된 사용자만)
+    const adaptiveCard = (body, actions, entities) => ({
+        $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+        type: 'AdaptiveCard',
+        version: '1.5',
+        body,
+        actions,
+        msteams: { width: 'Full', entities },
+    });
+
+    // resolvedPeople: [{ type: 'assignee' | 'cc', displayName, upn, id }] (Graph 조회로 확인된 사용자만)
     const buildCard = (payload, resolvedPeople) => {
         const people = (Array.isArray(resolvedPeople) ? resolvedPeople : []).filter((p) => p && p.upn);
         const parsed = parseTitle(payload.title);
@@ -240,7 +276,7 @@
         const showAlertExtras = !parsed.isRecovered;
         const details = detailsContainer(body);
 
-        const cardBody = [
+        const headBody = [
             headerContainer(parsed, payload),
             ...messageToElements(body.message),
             ...(showAlertExtras && isUsableImage(payload.image)
@@ -253,27 +289,26 @@
                     selectAction: { type: 'Action.OpenUrl', url: payload.image }, // 클릭 시 원본 크기로
                 }]
                 : []),
-            ...(showAlertExtras ? peopleFactSet(people) : []),
-            ...details,
         ];
         const actions = [
             ...body.links.slice(0, details.length ? MAX_ACTIONS - 1 : MAX_ACTIONS).map((l) => ({ type: 'Action.OpenUrl', title: l.title, url: l.url })),
             ...(details.length ? [{ type: 'Action.ToggleVisibility', title: '상세 조건', targetElements: [DETAILS_ID] }] : []),
         ];
 
+        // contents: 기존 '카드 게시' 단계용 (담당자 칸 + 카드 안 멘션)
+        // graphMessage: Graph 로 올릴 새 글 (멘션 줄 + 담당자 칸 없는 카드). 새 알람에만 넣는다
+        const contents = adaptiveCard(
+            [...headBody, ...(showAlertExtras ? peopleFactSet(people) : []), ...details],
+            actions,
+            showAlertExtras ? mentionEntities(people) : [],
+        );
         return {
             channel: payload.channel || '',
             eventId: payload.event_id || '',
             msgType: parsed.isRecovered ? 'B' : 'A',
             mentions: showAlertExtras ? mentionTargets(people) : [],
-            contents: {
-                $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
-                type: 'AdaptiveCard',
-                version: '1.5',
-                body: cardBody,
-                actions,
-                msteams: { width: 'Full', entities: showAlertExtras ? mentionEntities(people) : [] },
-            },
+            contents,
+            ...(showAlertExtras ? { graphMessage: buildGraphMessage(adaptiveCard([...headBody, ...details], actions, []), people) } : {}),
         };
     };
 

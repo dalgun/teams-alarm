@@ -42,12 +42,12 @@ const resolveDisplayNames = async (people) => {
     }
     return Promise.all(targets.map(async (p) => {
         try {
-            const response = await fetch(`${GRAPH_USERS}/${encodeURIComponent(p.upn)}?$select=displayName,userPrincipalName`, {
+            const response = await fetch(`${GRAPH_USERS}/${encodeURIComponent(p.upn)}?$select=id,displayName,userPrincipalName`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const user = await response.json();
-            return { ...p, upn: user.userPrincipalName || p.upn, name: user.displayName || p.upn };
+            return { ...p, upn: user.userPrincipalName || p.upn, name: user.displayName || p.upn, id: user.id };
         } catch (err) {
             console.error(`사용자 조회 실패(${p.upn}), 이메일로 멘션:`, err.message);
             return { ...p, name: p.upn };

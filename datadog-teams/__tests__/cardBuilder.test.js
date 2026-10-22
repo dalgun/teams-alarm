@@ -134,9 +134,38 @@ test('buildCard: 복구 알람이나 담당자가 없으면 mentions 는 빈 목
     assert.deepEqual(buildCard(fixtures.alertWithPeople.payload, []).mentions, []);
 });
 
-test('buildCard: Power Automate 로 넘기는 형식(channel/eventId/msgType/mentions/contents)을 유지한다', () => {
+test('buildCard: graphMessage 는 담당자/참조자 멘션 줄과 담당자 칸 없는 카드를 담는다', () => {
+    const { payload } = fixtures.alertWithPeople;
+    const card = buildCard(payload, [
+        { type: 'assignee', upn: 'a@emart.com', id: 'oid-a', displayName: '가(A&B팀)' },
+        { type: 'assignee', upn: 'b@emart.com', id: 'oid-b', displayName: '나' },
+        { type: 'cc', upn: 'c@emart.com', id: 'oid-c', displayName: '다' },
+        { type: 'cc', upn: 'd@emart.com', displayName: 'ID 없음' },
+    ]);
+    const { body, attachments, mentions } = card.graphMessage;
+
+    assert.equal(body.content,
+        '<attachment id="alertcard"></attachment><p>담당자: <at id="0">가(A＆B팀)</at>, <at id="1">나</at> / 참조자: <at id="2">다</at></p>');
+    assert.deepEqual(mentions[0], { id: 0, mentionText: '가(A＆B팀)', mentioned: { user: { id: 'oid-a', displayName: '가(A&B팀)', userIdentityType: 'aadUser' } } });
+    assert.equal(mentions.length, 3);
+    const attached = JSON.parse(attachments[0].content);
+    assert.equal(attachments[0].id, 'alertcard');
+    assert.equal(attached.body.some((e) => e.type === 'FactSet'), false);
+    assert.deepEqual(attached.msteams.entities, []);
+});
+
+test('buildCard: 멘션 대상이 없으면 graphMessage 는 카드만, 복구 알람은 graphMessage 가 없다', () => {
+    const card = buildCard(fixtures.alertWithPeople.payload, []);
+    assert.equal(card.graphMessage.body.content, '<attachment id="alertcard"></attachment>');
+    assert.deepEqual(card.graphMessage.mentions, []);
+
+    const { payload, people } = fixtures.recoveredWithPeople;
+    assert.equal(buildCard(payload, people).graphMessage, undefined);
+});
+
+test('buildCard: Power Automate 로 넘기는 형식(channel/eventId/msgType/mentions/contents/graphMessage)을 유지한다', () => {
     const card = buildCard({ title: '[Triggered] x', body: '', channel: 'ch', event_id: 'e1' }, []);
-    assert.deepEqual(Object.keys(card), ['channel', 'eventId', 'msgType', 'mentions', 'contents']);
+    assert.deepEqual(Object.keys(card), ['channel', 'eventId', 'msgType', 'mentions', 'contents', 'graphMessage']);
     assert.equal(card.channel, 'ch');
     assert.equal(card.eventId, 'e1');
     assert.equal(card.contents.type, 'AdaptiveCard');

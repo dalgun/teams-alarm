@@ -1,7 +1,7 @@
 'use strict';
 
 const jsonResponse = (status, data) => ({ ok: status < 300, status, json: async () => data });
-const USERS = { 'a@x.com': { displayName: '이현진(CMS/ALM) - 이마트팀', userPrincipalName: 'a@x.com' } };
+const USERS = { 'a@x.com': { id: 'oid-a', displayName: '이현진(CMS/ALM) - 이마트팀', userPrincipalName: 'a@x.com' } };
 
 const loadGraph = (fetchImpl) => {
     jest.resetModules();
@@ -26,7 +26,7 @@ test('Graph 표시 이름으로 채우고, 못 찾은 사람은 이메일을 이
     const result = await resolveDisplayNames([{ type: 'assignee', upn: 'a@x.com' }, { type: 'cc', upn: 'gone@x.com' }]);
 
     expect(result).toEqual([
-        { type: 'assignee', upn: 'a@x.com', name: '이현진(CMS/ALM) - 이마트팀' },
+        { type: 'assignee', upn: 'a@x.com', name: '이현진(CMS/ALM) - 이마트팀', id: 'oid-a' },
         { type: 'cc', upn: 'gone@x.com', name: 'gone@x.com' },
     ]);
 });

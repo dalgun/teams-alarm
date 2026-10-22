@@ -116,6 +116,28 @@ test('멘션: 첫 글에 담당자/참조자 FactSet 과 entity 를 넣는다', 
     ]);
 });
 
+test('graphMessage: 첫 글은 멘션 줄과 담당자 칸 없는 카드를 담고, 회신에는 없다', () => {
+    const people = [
+        { type: 'assignee', upn: 'a@x.com', name: '이현진(CMS/ALM) - 이마트팀', id: 'oid-a' },
+        { type: 'cc', upn: 'c@x.com', name: '권달마(A&I팀)', id: 'oid-c' },
+        { type: 'cc', upn: 'n@x.com', name: 'ID 없음' },
+    ];
+    const first = buildIncidentCard(incidentOf([update('u1', 'investigating', '02:55')]), {}, { people });
+    const { body, attachments, mentions } = first.graphMessage;
+
+    expect(body.content).toBe('<attachment id="incidentcard"></attachment><p>담당자: <at id="0">이현진(CMS/ALM) - 이마트팀</at> / 참조자: <at id="1">권달마(A＆I팀)</at></p>');
+    expect(mentions).toEqual([
+        { id: 0, mentionText: '이현진(CMS/ALM) - 이마트팀', mentioned: { user: { id: 'oid-a', displayName: '이현진(CMS/ALM) - 이마트팀', userIdentityType: 'aadUser' } } },
+        { id: 1, mentionText: '권달마(A＆I팀)', mentioned: { user: { id: 'oid-c', displayName: '권달마(A&I팀)', userIdentityType: 'aadUser' } } },
+    ]);
+    const card = JSON.parse(attachments[0].content);
+    expect(card.body.some((e) => e.type === 'FactSet')).toBe(false);
+    expect(card.msteams.entities).toEqual([]);
+
+    const reply = buildIncidentCard(incidentOf([update('u2', 'identified', '03:00'), update('u1', 'investigating', '02:55')]), {}, { people });
+    expect(reply.graphMessage).toBeUndefined();
+});
+
 test('selectMentionPeople: 평일 09~18시(KST)는 담당자만, 그 외·주말은 참조자까지', () => {
     const people = [{ type: 'assignee', upn: 'a', name: 'A' }, { type: 'cc', upn: 'c', name: 'C' }];
     const names = (iso) => selectMentionPeople(people, new Date(iso)).map((p) => p.name);

@@ -136,6 +136,33 @@
         };
     };
 
+    // Graph 로 올릴 첫 글: 카드 첨부 + 그 아래 멘션 줄(알림 발생) + 카드 첨부. 카드 안 멘션은 알림이 가지 않는다
+    const GRAPH_CARD_ID = 'incidentcard';
+    const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Teams 는 멘션 문구에 & 가 있으면 뒤에 `/at>` 를 남기므로 전각 ＆ 로 바꾼다
+    const graphMentionText = (person) => person.name.replace(/&/g, '＆');
+
+    const buildGraphMessage = (card, people) => {
+        const mentionable = (Array.isArray(people) ? people : []).filter((p) => p?.id && p?.name);
+        const groups = [
+            ['담당자', mentionable.filter((p) => p.type !== 'cc')],
+            ['참조자', mentionable.filter((p) => p.type === 'cc')],
+        ].filter(([, list]) => list.length);
+        const ordered = groups.flatMap(([, list]) => list);
+        const line = groups
+            .map(([label, list]) => `${label}: ${list.map((p) => `<at id="${ordered.indexOf(p)}">${escapeHtml(graphMentionText(p))}</at>`).join(', ')}`)
+            .join(' / ');
+        return {
+            body: { contentType: 'html', content: `<attachment id="${GRAPH_CARD_ID}"></attachment>${line ? `<p>${line}</p>` : ''}` },
+            attachments: [{ id: GRAPH_CARD_ID, contentType: 'application/vnd.microsoft.card.adaptive', content: JSON.stringify(card) }],
+            mentions: ordered.map((p, i) => ({
+                id: i,
+                mentionText: graphMentionText(p),
+                mentioned: { user: { id: p.id, displayName: p.name, userIdentityType: 'aadUser' } },
+            })),
+        };
+    };
+
     // 진행 단계: 단계별 첫 도달 시각을 표시하고, 현재 단계는 강조, 아직 안 온 단계는 흐리게
     const stageStepper = (updates, tone) => {
         const latest = updates[0];
@@ -183,32 +210,34 @@
         const hasOriginal = Boolean(translated?.body && update.body && translated.body !== update.body);
         const mention = isReply ? null : peopleMention(options?.people);
 
-        const cardBody = [
-            headerContainer({ incident, update, title, isReply }),
-            ...paragraphs(body),
-            ...(mention ? [mention.element] : []),
+        const tail = [
             ...stageStepper(updates, toneOf(incident, update)),
             ...(hasOriginal
                 ? [{ type: 'Container', id: ORIGINAL_ID, isVisible: false, separator: true, spacing: 'Medium', items: paragraphs(update.body, { size: 'Small', isSubtle: true }) }]
                 : []),
         ];
+        const head = [headerContainer({ incident, update, title, isReply }), ...paragraphs(body)];
         const actions = [
             ...(incident.shortlink ? [{ type: 'Action.OpenUrl', title: '상태 페이지', url: incident.shortlink }] : []),
             ...(hasOriginal ? [{ type: 'Action.ToggleVisibility', title: '원문 보기', targetElements: [ORIGINAL_ID] }] : []),
         ];
+        const adaptiveCard = (cardBody, entities) => ({
+            $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+            type: 'AdaptiveCard',
+            version: '1.5',
+            body: cardBody,
+            actions,
+            msteams: { width: 'Full', entities },
+        });
 
+        // contents: 기존 '카드 게시' 단계용 (담당자 칸 + 카드 안 멘션)
+        // graphMessage: Graph 로 올릴 첫 글 (멘션 줄 + 담당자 칸 없는 카드). 회신에는 넣지 않는다
         return {
             uniqueId: incident.id || '',
             msgType: isReply ? MSG_TYPE_REPLY : MSG_TYPE_FIRST,
             mentions: mention ? mention.targets : [],
-            contents: {
-                $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
-                type: 'AdaptiveCard',
-                version: '1.5',
-                body: cardBody,
-                actions,
-                msteams: { width: 'Full', entities: mention ? mention.entities : [] },
-            },
+            contents: adaptiveCard([...head, ...(mention ? [mention.element] : []), ...tail], mention ? mention.entities : []),
+            ...(isReply ? {} : { graphMessage: buildGraphMessage(adaptiveCard([...head, ...tail], []), options?.people) }),
         };
     };
 

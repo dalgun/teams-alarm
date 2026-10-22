@@ -91,7 +91,7 @@ const resolvePeople = async (people) => {
         const token = await getAccessToken();
         const results = await Promise.all(targets.map(async (person) => {
             const result = await checkEmailValidity(person.mail, token);
-            return result.isValid ? { type: person.type, displayName: result.displayName, upn: result.upn } : null;
+            return result.isValid ? { type: person.type, displayName: result.displayName, upn: result.upn, id: result.id } : null;
         }));
         return results.filter(Boolean);
     } catch (error) {
